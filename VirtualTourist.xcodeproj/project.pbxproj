@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9D1177341C821BE2005A47C7 /* ImageMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D1177331C821BE2005A47C7 /* ImageMemory.swift */; };
 		9D3DD63D1C6ED22700B26954 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3DD63C1C6ED22700B26954 /* AppDelegate.swift */; };
 		9D3DD6401C6ED22700B26954 /* VirtualTourist.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9D3DD63E1C6ED22700B26954 /* VirtualTourist.xcdatamodeld */; };
 		9D3DD6471C6ED22700B26954 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9D3DD6451C6ED22700B26954 /* Main.storyboard */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9D1177331C821BE2005A47C7 /* ImageMemory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageMemory.swift; sourceTree = "<group>"; };
 		9D3DD6391C6ED22600B26954 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D3DD63C1C6ED22700B26954 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9D3DD63F1C6ED22700B26954 /* VirtualTourist.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = VirtualTourist.xcdatamodel; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				9D3DD6601C72754C00B26954 /* Photo.swift */,
 				9D3DD65E1C72754C00B26954 /* Pin.swift */,
 				9D3DD6651C764AE800B26954 /* UserSettings.swift */,
+				9D1177331C821BE2005A47C7 /* ImageMemory.swift */,
 			);
 			name = Model;
 			sourceTree = "<group>";
@@ -184,6 +187,7 @@
 				9D3DD6541C6ED46600B26954 /* TravelLocationsMapViewController.swift in Sources */,
 				9D3DD6641C72754C00B26954 /* Photo.swift in Sources */,
 				9D3DD6561C6ED57100B26954 /* PhotoAlbumViewController.swift in Sources */,
+				9D1177341C821BE2005A47C7 /* ImageMemory.swift in Sources */,
 				9D3DD65A1C6ED95E00B26954 /* FlickerAPI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -296,6 +300,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = VirtualTourist/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.WASIM.VirtualTourist;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -307,6 +312,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = VirtualTourist/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.WASIM.VirtualTourist;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -332,6 +338,7 @@
 				9D3DD6521C6ED22700B26954 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

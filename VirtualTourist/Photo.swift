@@ -25,21 +25,28 @@ class Photo: NSManagedObject {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }
     
-    init(url: NSURL ,context: NSManagedObjectContext) {
-        let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)
-        super.init(entity: entity!, insertIntoManagedObjectContext: context)
+    init(url: String ,context: NSManagedObjectContext) {
+       
+        let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
+        super.init(entity: entity, insertIntoManagedObjectContext: context)
         
         imagePath = "\(url)"
+        
     }
     
-    var photo: UIImage? {
+    var photo: UIImage? { //NEEDED STILL
         get {
-        if let data = NSData(contentsOfURL: NSURL(string: self.imagePath!)!) {
-           let image = UIImage(data: data)
-            return image
-            }
-        return UIImage()
+        return ImageMemory.retrieveImage(self.imagePath!)
         }
+        set {
+        ImageMemory.saveImage(newValue, pathComponent: self.imagePath!)
+
+        }
+    }
+    
+    //AS SUGGESTED IN CODE REVIEW
+    override func prepareForDeletion() {
+        ImageMemory.deleteImage(self.imagePath!)
     }
 
 }

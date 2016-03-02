@@ -95,6 +95,9 @@
                                                 <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="placeHolder" translatesAutoresizingMaskIntoConstraints="NO" id="9Ni-du-zU6">
                                                     <rect key="frame" x="0.0" y="0.0" width="125" height="125"/>
                                                 </imageView>
+                                                <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="WjW-Zp-gba">
+                                                    <rect key="frame" x="44" y="44" width="37" height="37"/>
+                                                </activityIndicatorView>
                                             </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                         </view>
@@ -102,9 +105,12 @@
                                             <constraint firstItem="9Ni-du-zU6" firstAttribute="leading" secondItem="uo4-xo-R6r" secondAttribute="leading" id="0aF-sa-WXa"/>
                                             <constraint firstAttribute="bottom" secondItem="9Ni-du-zU6" secondAttribute="bottom" id="2IN-gw-hFK"/>
                                             <constraint firstAttribute="trailing" secondItem="9Ni-du-zU6" secondAttribute="trailing" id="aQT-x4-CSh"/>
+                                            <constraint firstItem="WjW-Zp-gba" firstAttribute="centerX" secondItem="9Ni-du-zU6" secondAttribute="centerX" id="eQm-kh-ymp"/>
+                                            <constraint firstItem="WjW-Zp-gba" firstAttribute="centerY" secondItem="9Ni-du-zU6" secondAttribute="centerY" id="egO-Kx-qUg"/>
                                             <constraint firstItem="9Ni-du-zU6" firstAttribute="top" secondItem="uo4-xo-R6r" secondAttribute="top" id="jGi-cw-BYm"/>
                                         </constraints>
                                         <connections>
+                                            <outlet property="activityIndicator" destination="WjW-Zp-gba" id="sYv-ww-MTf"/>
                                             <outlet property="imageView" destination="9Ni-du-zU6" id="F1v-fM-v4U"/>
                                         </connections>
                                     </collectionViewCell>

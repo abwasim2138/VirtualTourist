@@ -41,7 +41,8 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         super.viewWillAppear(animated)
         
         navigationController?.navigationBarHidden = true
-      
+        let ann = mapView.selectedAnnotations
+        mapView.deselectAnnotation(ann.first, animated: true)
     }
     
 
@@ -51,9 +52,12 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier("pin") as? MKPinAnnotationView
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "pin")
-            pinView!.pinTintColor = UIColor.blueColor()
+            pinView!.pinTintColor = UIColor.purpleColor()
             pinView!.animatesDrop = true
-            pinView!.draggable = true
+            pinView?.draggable = true
+            let moveGR = UITapGestureRecognizer(target: self, action: "segueTap:")
+            pinView?.addGestureRecognizer(moveGR)
+            
         }else{
             pinView?.annotation = annotation
         }
@@ -62,26 +66,26 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         return pinView
     }
     
-    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        if let annotation = view.annotation {
-            for pin in pins {
-                let coord = CLLocationCoordinate2DMake(CLLocationDegrees(pin.latitude!), CLLocationDegrees(pin.longitude!))
-                if "\(coord)" == "\(annotation.coordinate)" {
-                    self.pin = pin
-                }
-            }
-        }
-        performSegueWithIdentifier("showAlbum", sender: self)
-    }
     
+    //CITE: http://stackoverflow.com/questions/29776853/ios-swift-mapkit-making-an-annotation-draggable-by-the-user
     func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
-        print("HELLO")
+    
+        let oldAnnotation = view.annotation!
+        switch newState {
+        case .Starting:
+            updatePin(oldAnnotation)
+        case .Ending, .Canceling:
+            view.dragState = .None
+            annotations.append(view.annotation!)
+            addPin(view.annotation!)
+        default:
+            break
+        }
+        
     }
     
     func dropPin (sender: UILongPressGestureRecognizer) {
-    
         if sender.state.rawValue == 1 { //TO PREVENT MULTIPLE DROPS IN THE SAME SPOT
-        print(sender.state.rawValue)
         let annotation = MKPointAnnotation()
         let point = sender.locationInView(self.mapView)
         let coord = mapView.convertPoint(point, toCoordinateFromView: mapView)
@@ -93,6 +97,32 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         self.mapView.addAnnotation(annotation)
             }
         }
+    }
+    
+    func updatePin (oldAnnotation: MKAnnotation) {
+        for pin in pins {
+            let coord = CLLocationCoordinate2DMake(CLLocationDegrees(pin.latitude!), CLLocationDegrees(pin.longitude!))
+            if "\(coord)" == "\(oldAnnotation.coordinate)" {
+                let index = pins.indexOf(pin)
+                pins.removeAtIndex(index!)
+                annotations.removeAtIndex(index!)
+                sharedContext.deleteObject(pin)
+            }
+        }
+    }
+    
+    func segueTap (sender: UITapGestureRecognizer) {
+        let view = sender.view as! MKAnnotationView
+        if let annotation = view.annotation {
+            for pin in pins {
+                let coord = CLLocationCoordinate2DMake(CLLocationDegrees(pin.latitude!), CLLocationDegrees(pin.longitude!))
+                if "\(coord)" == "\(annotation.coordinate)" {
+                    self.pin = pin
+                }
+            }
+        }
+        
+        performSegueWithIdentifier("showAlbum", sender: self)
     }
     
 

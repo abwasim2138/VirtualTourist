@@ -72,7 +72,7 @@ class FlickerAPI {
         return task
     }
     
-    static func getImagesFromFlickr(lat: Double, long: Double, completionHandler: (images: [NSURL], error: NSError?)->Void)->NSURLSessionTask {
+    static func getImagesFromFlickr(lat: Double, long: Double, completionHandler: (images: [String], error: NSError?)->Void)->NSURLSessionTask {
         
         let methodArguments = [
             "method": METHOD_NAME,
@@ -146,14 +146,19 @@ class FlickerAPI {
         return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
     }
     
-    static func getImageFromFlickrBySearchWithPage(methodArguments: [String : AnyObject], pageNumber: Int, completionHandler: (images: [NSURL], error: NSError?)->Void) {
-           print("GET TO PAGE PART")
+    static func getImageFromFlickrBySearchWithPage(methodArguments: [String : AnyObject], pageNumber: Int, completionHandler: (images: [String], error: NSError?)->Void) {
         
         var withPageDictionary = methodArguments
         withPageDictionary["page"] = pageNumber
         
+        getPhotosFromDictionary(withPageDictionary, completionHandler: completionHandler)
+        
+    }
+    
+    
+    static func getPhotosFromDictionary (var withPageDictionary: [String: AnyObject], completionHandler: (images: [String], error: NSError?)->Void) {
         let task = requestData(withPageDictionary) { (photosDictionary, error) -> Void in
-
+            
             guard let totalPhotosVal = (photosDictionary!["total"] as? NSString)?.integerValue else {
                 return completionHandler(images: [], error: nil)
             }
@@ -162,7 +167,18 @@ class FlickerAPI {
                 guard let photosArray = photosDictionary!["photo"] as? [[String: AnyObject]] else {
                     return completionHandler(images: [], error: nil)
                 }
-                var images = [NSURL]()
+                
+                if photosArray.count == 0 {
+                    //IF THE PAGE FOR SOME REASON HAS NO PHOTOS THEN ANOTHER RANDOM PAGE IS CALLED
+                    let page = withPageDictionary["page"] as! Int
+                    let pageLimit = min(page, 40)
+                    let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+                    withPageDictionary["page"] = randomPage
+                    return getPhotosFromDictionary(withPageDictionary, completionHandler: completionHandler)
+                }
+                
+                
+                var images = [String]()
                 var condition = 12
                 if photosArray.count < 12 {
                     condition = photosArray.count
@@ -170,27 +186,19 @@ class FlickerAPI {
                 for var i = 0; i < condition;i++ {
                     let randomPhotoIndex = Int(arc4random() % UInt32(photosArray.count))
                     let photoDictionary = photosArray[randomPhotoIndex] as [String: AnyObject]
-                    
                     guard let imageUrlString = photoDictionary["url_m"] as? String else {
                         return completionHandler(images: [], error: nil)
                     }
                     
-                    if let imageURL = NSURL(string: imageUrlString) {
-                    images.append(imageURL)
-                    }else{
-                        return completionHandler(images: [], error: nil)
-                    }
-
+                    images.append(imageUrlString)
                 }
+
                 completionHandler(images: images, error: nil)
             } else {
-                print("NOTHING FOUND")
-                let url = [NSURL]()
-                print(url)
+                let url = [String]()
                 completionHandler(images: url, error: nil)
             }
         }
-        
         task.resume()
     }
     

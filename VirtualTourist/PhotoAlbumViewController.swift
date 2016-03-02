@@ -26,6 +26,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     var noImagesLabel = UILabel()
     var indexP: [NSIndexPath]!
     var needNew = false
+    var placeHolderCount = 0
     
     //CITE: COLOR COLLECTION
     var insertedIndexPaths: [NSIndexPath]!
@@ -37,14 +38,25 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
         super.viewDidLoad()
         
        setUpUI()
-        
+  
     }
     
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(animated)
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
         
+        fetchPhotos()
         getPhotos()
-       
+    }
+    
+    func fetchPhotos() {
+        
+        do {
+            try fetchedResultsController.performFetch()
+        }catch let error as NSError{
+            print(error)
+        }
+        self.fetchedResultsController.delegate = self
+
     }
     
     func setUpUI () {
@@ -79,20 +91,28 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
             let coords = CLLocationCoordinate2D(latitude: annotation.coordinate.latitude + 0.1, longitude: annotation.coordinate.longitude)
             let doubleVersionLat = Double(coords.latitude)
             let doubleVersionLong = Double(coords.longitude)
+        
             FlickerAPI.getImagesFromFlickr(doubleVersionLat, long: doubleVersionLong, completionHandler: { (images, error) -> Void in
                 if error == nil && images != [] {
-                
-                let _ = images.map({ (imageURL: NSURL) -> Photo in
+            
+                self.sharedContext.performBlock({
+                //CITE: CONCURRENCY FIX BASED OFF OF https://discussions.udacity.com/t/thread-safe-context/37597/2
+
+                let _ = images.map({ (imageURL: String) -> Photo in
                     let photo = Photo(url: imageURL, context: self.sharedContext)
                     photo.pin = self.pin
-                    
-                    CoreDataStackManager.sharedInstance().saveContext()
                     return photo
+
                 })
                     dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                        self.collectionView.reloadData()
+                        self.placeHolderCount = images.count
                         self.noImagesLabel.hidden = true
+                        self.newCollection.enabled = true
                     })
+                    CoreDataStackManager.sharedInstance().saveContext() //TRY HERE
+                        })
+            
+        
                 }else{
                     dispatch_async(dispatch_get_main_queue(), { () -> Void in
                         self.noImagesLabel.text = "Sorry No Images Available For This Location"
@@ -100,19 +120,12 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
                     })
 
                 }
-                    self.newCollection.enabled = true
             })
         }else{
             noImagesLabel.hidden = true
+            self.collectionView.reloadData()
         }
         
-        do {
-            try fetchedResultsController.performFetch()
-            collectionView.reloadData()
-        }catch let error as NSError{
-            print(error)
-        }
-        self.fetchedResultsController.delegate = self
     }
     
     //MARK: - CORE DATA 
@@ -133,6 +146,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     //CITE: ColorCollection
     
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
+        
         insertedIndexPaths = [NSIndexPath]()
         deletedIndexPaths = [NSIndexPath]()
         updatedIndexPaths = [NSIndexPath]()
@@ -147,6 +161,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
                 updatedIndexPaths.append(indexPath!)
         case .Move: break
         }
+        
     }
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
         collectionView.performBatchUpdates({ () -> Void in
@@ -163,26 +178,20 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
                 self.collectionView.reloadItemsAtIndexPaths([indexPath])
                 
             }
-            
+        
             }, completion: nil)
     }
     
     //MARK: - UICOLLECTIONVIEWDATASOURCE
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
-        return fetchedResultsController.sections?.count ?? 0
-    }
 
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return fetchedResultsController.sections![section].numberOfObjects
+        return fetchedResultsController.sections?[section].numberOfObjects ?? 0
     }
 
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("pinCell", forIndexPath: indexPath) as! CollectionViewCell
-        dispatch_async(dispatch_get_main_queue(), {
-            cell.imageView.image = UIImage(named: "placeHolderImage")
-        })
         
         let photo = fetchedResultsController.objectAtIndexPath(indexPath) as? Photo
       
@@ -205,18 +214,38 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     func collectionView(collectionView: UICollectionView, willDisplayCell cell: UICollectionViewCell, forItemAtIndexPath indexPath: NSIndexPath) {
 
         newCollection.enabled = true
+       
     }
     
     //MARK: - ConfigureCell
     
     func configureCell(cell: CollectionViewCell, photo: Photo?) {
         
-        if let image = photo?.photo {
-            dispatch_async(dispatch_get_main_queue(), {
-                cell.imageView.image = image
-            })
-
+        cell.imageView.image = UIImage(named: "placeHolder")
+        cell.activityIndicator.hidden = false
+        cell.activityIndicator.startAnimating()
+        
+        //CITE: GLOBAL QUEUE http://pawanpoudel.svbtle.com/fixing-core-data-concurrency-violations
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)) { () -> Void in
+            self.sharedContext.performBlock({
+            if let image = photo?.photo {
+                dispatch_async(dispatch_get_main_queue(), {
+                    cell.imageView.image = image
+                    cell.activityIndicator.stopAnimating()
+                    cell.activityIndicator.hidden = true
+                })
+            }else if let data = NSData(contentsOfURL: NSURL(string: photo!.imagePath!)!) {
+                let image = UIImage(data: data)
+                photo!.photo = image
+                dispatch_async(dispatch_get_main_queue(), {
+                    cell.imageView.image = image
+                    cell.activityIndicator.stopAnimating()
+                    cell.activityIndicator.hidden = true
+                })
+            }
+                })
         }
+
             cell.imageView.alpha = 1.0
         
     }
@@ -239,7 +268,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     }
     
     func deletePhotos() {
-        
         for iP in indexP {
             let photo = fetchedResultsController.objectAtIndexPath(iP) as! Photo
             sharedContext.deleteObject(photo)
