@@ -99,7 +99,6 @@ class FlickerAPI {
                 completionHandler(images: images, error: error)
             })
         }
-        
         task.resume()
         
         return task

@@ -12,6 +12,9 @@ import UIKit
 class ImageMemory {
     
     class func retrieveImage(pathComponent: String)->UIImage? {
+        CoreDataStackManager.sharedInstance().managedObjectContext.performBlockAndWait({
+        
+        })
         let path = makePath(pathComponent)
         
         if let data = NSData(contentsOfFile: path) {
@@ -26,12 +29,10 @@ class ImageMemory {
 
         let path = makePath(pathComponent)
         let data = UIImagePNGRepresentation(image!)
-        print("RANGER : \(pathComponent)")
 
         //SAVE TO DOCUMENTS DIRECTORY
         do {
         try data!.writeToFile(path, options: NSDataWritingOptions.AtomicWrite)
-            print("SAVED")
         }catch let error as NSError {
             print("ERROR IN SAVING \(error.localizedFailureReason)")
         }
@@ -43,7 +44,6 @@ class ImageMemory {
         if NSFileManager.defaultManager().fileExistsAtPath(path) {
         do {
             try NSFileManager.defaultManager().removeItemAtPath(path)
-            print("ITEM REMOVED")
         }catch let error as NSError {
             print("ERROR IN DELETING IMAGEPATH \(error.userInfo)")
         }

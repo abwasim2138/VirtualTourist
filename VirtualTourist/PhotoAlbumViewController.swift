@@ -38,26 +38,19 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
         super.viewDidLoad()
         
        setUpUI()
+       fetchPhotos()
+    }
   
-    }
-    
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        fetchPhotos()
-        getPhotos()
-    }
-    
     func fetchPhotos() {
-        
         do {
             try fetchedResultsController.performFetch()
         }catch let error as NSError{
             print(error)
         }
         self.fetchedResultsController.delegate = self
-
+     
     }
+    
     
     func setUpUI () {
         navigationController?.navigationBarHidden = false
@@ -81,6 +74,12 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
                 self.mapView.addAnnotation(self.annotation)
             })
 
+        }
+    }
+    
+    func mapViewDidFinishLoadingMap(mapView: MKMapView) {
+        if pin.photos.isEmpty {
+            noImagesLabel.text = "Sorry No Images Available For This Location"
         }
     }
     
@@ -146,7 +145,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     //CITE: ColorCollection
     
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
-        
         insertedIndexPaths = [NSIndexPath]()
         deletedIndexPaths = [NSIndexPath]()
         updatedIndexPaths = [NSIndexPath]()
@@ -169,7 +167,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
             for indexPath in self.insertedIndexPaths {
                 self.collectionView.insertItemsAtIndexPaths([indexPath])
             }
-            
             for indexPath in self.deletedIndexPaths {
                self.collectionView.deleteItemsAtIndexPaths([indexPath])
             }
@@ -178,14 +175,16 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
                 self.collectionView.reloadItemsAtIndexPaths([indexPath])
                 
             }
-        
+            
             }, completion: nil)
     }
+    
     
     //MARK: - UICOLLECTIONVIEWDATASOURCE
     
 
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+
         return fetchedResultsController.sections?[section].numberOfObjects ?? 0
     }
 
@@ -212,8 +211,10 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     }
     
     func collectionView(collectionView: UICollectionView, willDisplayCell cell: UICollectionViewCell, forItemAtIndexPath indexPath: NSIndexPath) {
-
+        
+        noImagesLabel.hidden = true
         newCollection.enabled = true
+        
        
     }
     
@@ -221,34 +222,52 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, UICollectio
     
     func configureCell(cell: CollectionViewCell, photo: Photo?) {
         
-        cell.imageView.image = UIImage(named: "placeHolder")
-        cell.activityIndicator.hidden = false
-        cell.activityIndicator.startAnimating()
+        dispatch_async(dispatch_get_main_queue()) { //AS SUGGESTED IN CODE REVIEW
+            cell.imageView.image = UIImage(named: "placeHolder")
+            cell.activityIndicator.hidden = false
+            cell.activityIndicator.startAnimating()
+        }
         
         //CITE: GLOBAL QUEUE http://pawanpoudel.svbtle.com/fixing-core-data-concurrency-violations
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)) { () -> Void in
-            self.sharedContext.performBlock({
-            if let image = photo?.photo {
+            
+            var iP: String?
+            var imageHolder: UIImage?
+            self.sharedContext.performBlockAndWait({
+               imageHolder = photo?.photo
+            })
+            if let photo = imageHolder {
                 dispatch_async(dispatch_get_main_queue(), {
-                    cell.imageView.image = image
-                    cell.activityIndicator.stopAnimating()
-                    cell.activityIndicator.hidden = true
-                })
-            }else if let data = NSData(contentsOfURL: NSURL(string: photo!.imagePath!)!) {
+                cell.imageView.image = photo
+                cell.activityIndicator.stopAnimating()
+                cell.activityIndicator.hidden = true
+            })
+            }else {
+               self.sharedContext.performBlockAndWait({
+                iP = photo!.imagePath
+              })
+            }
+            guard let string = iP else {
+                return
+            }
+            
+            guard let data = NSData(contentsOfURL: NSURL(string: string)!) else {
+                return
+            }
                 let image = UIImage(data: data)
                 photo!.photo = image
                 dispatch_async(dispatch_get_main_queue(), {
                     cell.imageView.image = image
                     cell.activityIndicator.stopAnimating()
                     cell.activityIndicator.hidden = true
-                })
-            }
+
                 })
         }
 
             cell.imageView.alpha = 1.0
         
     }
+    
     
     //MARK: - UIACTION
     

@@ -31,7 +31,6 @@ class UserSettings {
             let region = MKCoordinateRegion(center: center, span: span)
             return region
         }else{
-            print("EMPTY")
             return nil
         }
     }

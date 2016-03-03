@@ -39,7 +39,9 @@ class Photo: NSManagedObject {
         return ImageMemory.retrieveImage(self.imagePath!)
         }
         set {
-        ImageMemory.saveImage(newValue, pathComponent: self.imagePath!)
+            CoreDataStackManager.sharedInstance().managedObjectContext.performBlock({
+         ImageMemory.saveImage(newValue, pathComponent: self.imagePath!)
+            })
 
         }
     }

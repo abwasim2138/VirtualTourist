@@ -97,6 +97,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         self.mapView.addAnnotation(annotation)
             }
         }
+    
     }
     
     func updatePin (oldAnnotation: MKAnnotation) {
@@ -155,14 +156,37 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
        return CoreDataStackManager.sharedInstance().managedObjectContext
     }()
     
-    func addPin (pin: MKAnnotation) {
+    func addPin (annotation: MKAnnotation) {
         let dictionary: [String: AnyObject] = [
-            Pin.Keys.Lat : pin.coordinate.latitude,
-            Pin.Keys.Long : pin.coordinate.longitude,
+            Pin.Keys.Lat : annotation.coordinate.latitude,
+            Pin.Keys.Long : annotation.coordinate.longitude,
         ]
         let pin = Pin(dictionary: dictionary, context: sharedContext)
         self.pins.append(pin)
+        
         CoreDataStackManager.sharedInstance().saveContext()
+        
+        //PRE FETCH IMAGES FOR PIN HERE
+        let coords = CLLocationCoordinate2D(latitude: annotation.coordinate.latitude + 0.1, longitude: annotation.coordinate.longitude)
+        let doubleVersionLat = Double(coords.latitude)
+        let doubleVersionLong = Double(coords.longitude)
+        FlickerAPI.getImagesFromFlickr(doubleVersionLat, long: doubleVersionLong, completionHandler: { (images, error) -> Void in
+            if error == nil && images != [] {
+                self.sharedContext.performBlock({
+                    //CITE: CONCURRENCY FIX BASED OFF OF https://discussions.udacity.com/t/thread-safe-context/37597/2
+                    
+                    let _ = images.map({ (imageURL: String) -> Photo in
+                        let photo = Photo(url: imageURL, context: self.sharedContext)
+                        photo.pin = pin
+                        
+                        return photo
+                        
+                    })
+                   
+                    CoreDataStackManager.sharedInstance().saveContext() //TRY HERE
+                })
+            }
+        })
     }
     
 
